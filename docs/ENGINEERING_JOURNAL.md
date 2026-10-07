@@ -24,15 +24,15 @@ Only observed problems and actual checks are recorded. “Implementation session
 - **Limitations:** Local filesystem assumptions; Linux locking is implemented but not yet exercised. No claim of network-filesystem semantics.
 - **Involvement:** Implementation session investigated, changed and ran checks. Shaoyu's personal investigation/learning: not reported.
 
-## J03 — Ray fixture stalled without test output (open)
+## J03 — Ray Data CPU reservation stalled a tiny fixture
 - **Context:** First real Ray Data integration parity test, 10 documents across 10 input files with batch/worker variants.
 - **Symptom/discovery:** Background test still running at 6m41s with no stdout. Tiny workload made this a suspected startup/execution stall, not performance evidence.
 - **Investigation:** One deliberate status inspection confirmed it was running; bounded logs had no output. Ray monitor logs showed a healthy active node with `0.01/1.0 CPU` used and a pending `CPU: 1.0, memory: 558` task. This establishes a scheduling stall after runtime startup, not a firewall/startup failure. Dashboard missing-extra warnings were not taken as proof of the stall's cause. Diagnostic output completed log reads but then timed out during process enumeration; remove that nonessential enumeration.
-- **Root cause:** Evidence points to fractional control-actor CPU reservation leaving less than one CPU available for a 1-CPU Data read task. Retest is required to confirm the remedy.
+- **Root cause:** Fractional control-actor CPU reservation left less than one CPU available for a 1-CPU Data read task. Reserving control headroom allowed the same fixtures to complete.
 - **Alternatives:** Inspect Ray logs before changing configuration; isolate `ray.init`; use another supported local platform if Windows proves blocked. Not replace Ray with a sequential fallback.
 - **Decision/tradeoffs:** Stop the stalled test and reserve one extra logical CPU when initializing the local Ray runtime (`workers + 1`), keeping transformation concurrency at the requested worker cap. Cost: runtime resource allocation includes control headroom and can exceed the requested compute-worker count. No sequential fallback.
-- **Verification:** Retest with control headroom running; no successful Ray run or benchmark claimed yet.
-- **Limitations:** Required backend completion gate remains open.
+- **Verification:** `pytest tests/test_ray.py tests/test_ray_recovery.py -q --tb=short`: 4 passed, 4 upstream warnings in 156.42s. Byte-identical kept/removed/candidates/verified artifacts across backends for batch/worker variants (1/1 and 3/2), real worker-UDF failure, and Ray resume/clean parity. Ray commit pending receipt. Benchmark matrix launched separately.
+- **Limitations:** Runtime advertises workers+1 logical CPUs; read/shuffle scheduling remains Ray-managed. An externally initialized runtime with insufficient headroom can still stall unless rejected; no general deadlock-recovery promise.
 - **Involvement:** Implementation session observed the stall and started diagnosis. Shaoyu's personal investigation/learning: not reported.
 
 ## H00 — Deterministic global groups with heterogeneous metadata
@@ -40,7 +40,7 @@ Only observed problems and actual checks are recorded. “Implementation session
 - **Difficulty:** Metadata objects may have different keys/types across records. Letting Arrow infer one nested metadata schema could coerce values or fail; partition-local groups would violate global deduplication. This is a design constraint, not a claim that a coercion failure was reproduced.
 - **Approaches/decision:** Keep document/prepared structures inside JSON payload columns for transport; use explicit digest/band/id columns for global grouping. Share comparison and survivor functions with sequential execution. Validate file/line records centrally before Ray rereads text lines.
 - **Tradeoffs:** JSON serialization, double reads and coordinator collections sacrifice performance for an inspectable local prototype. Bounds and worker failures must remain explicit. Fully distributed clustering or typed metadata normalization would add scope.
-- **Verification:** Exact/near pure-function fixtures pass. Actual Ray parity tests are still running; no distributed correctness claim yet. Relevant commit pending.
+- **Verification:** Exact/near pure-function fixtures pass; 4 real Ray integration tests passed in 156.42s, including heterogeneous per-document metadata, global duplicate groups, deterministic decisions and recovery. Relevant Ray commit pending receipt.
 - **Involvement:** Implementation-session design and implementation. Shaoyu's personal investigation/learning: not reported.
 
 ## H01 — Object-store measurement must measure usage, not capacity

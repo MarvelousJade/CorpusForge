@@ -4,8 +4,8 @@ New isolated repository; parent directory has no usable Git repository and no AG
 
 - [x] Ingestion, normalization, deterministic exact dedup, diagnostics
 - [x] Seeded MinHash, LSH candidates, verified edges, clustering, oracle tests
-- [ ] Real Ray Data batch/global-group backend and parity tests
-- [x] Atomic stage persistence, fingerprint validation, interruption/resume tests (sequential verified; Ray check pending)
+- [x] Real Ray Data batch/global-group backend and parity tests
+- [x] Atomic stage persistence, fingerprint validation, interruption/resume tests (both backends)
 - [ ] Reproducible synthetic benchmark, actual measurements
 - [ ] Architecture, decisions, attribution, interview preparation
 - [ ] Separate learning branch/checkpoints; investigate and record evidence
@@ -22,5 +22,9 @@ Full suite at this increment: 10 passed (1.43s); sequential near-enabled sample 
 ## Recovery investigation
 
 Initial recovery check: 2 failures, 15 passes. Cached JSON edges reload as lists; newly computed edges were tuples. Sorting the mixed representations failed. Normalize all edges to tuples inside survivor selection. Follow-up: 1 failure, 20 passes; on Windows, the second writer's lock-byte read raised PermissionError before lock handling. Replace that read with fstat size inspection. Final targeted check: 22 passed (10.92s), including boundary interrupts, a partial uncommitted stage, changed inputs/configuration, missing/corrupt artifacts, locking and reproducible synthetic generation. Ray integration remains a separate completion gate.
+
+## Increment 4 — Ray verification
+
+First one-CPU fixture stalled: monitor showed 0.01 CPU occupied by control work while a 1-CPU task waited. Stopped that run; reserve one extra runtime CPU while batch/flat-map concurrency remains configured. Actual integration rerun: 4 passed, 4 upstream warnings in 156.42s. Tests compare kept/removed/candidates/verified bytes across sequential/Ray for batch/workers 1/1 and 3/2, exercise a real worker UDF exception, and compare Ray resume with clean. CLI regressions separately: 3 passed in 6.61s. Detailed evidence and ownership are in docs/ENGINEERING_JOURNAL.md.
 
 Contract: IDs are nonempty strings, ordered lexicographically. Metadata must be an object. Unknown fields rejected. Empty normalized strings deduplicate exactly. Original text and metadata are never rewritten. Local prototype with explicit input/record/candidate caps. No claims of production-scale execution or perfect LSH recall.
