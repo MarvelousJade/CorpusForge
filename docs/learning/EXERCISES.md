@@ -1,24 +1,33 @@
-# Practice scenarios — symptoms only
+# Bugs — symptoms and reproduction
 
-These deliberately faulty checkpoints are separate from passing `main`. They are learning material, not production incidents. Branch/checkpoint creation is a completion gate: check WORKLOG for whether checkpoints have actually been created.
+These issues were introduced on a separate learning branch after validating a working baseline (`80409b2`). They were not defects discovered on main. Fixes restore behavior already present there. Historical bug snapshots remain available; only the corrected, fully checked branch state is eligible for integration.
 
-Use a separate worktree and the main repository's virtualenv (an editable install should not be used while switching worktrees; run from the worktree so its package is imported). Keep your investigation notes before opening hints or solutions.
+Use a separate worktree and the main repository's virtualenv by absolute path. A `CorpusForge-learning` worktree already exists. For another:
 
 ```sh
-git worktree add ../CorpusForge-practice learning/exercises
-# In that worktree, use the absolute path to the main .venv Python:
-python -m pytest practice_regressions/test_scenarios.py -q
+git worktree add --detach ../CorpusForge-debug bug/partition
 ```
 
-Select one faulty checkpoint at a time with `git switch --detach practice/partition`, `practice/survivor`, or `practice/resume`. The checkpoints each isolate one defect; the learning branch tip is the resume scenario. Never merge them into main.
+Select snapshots with `git switch --detach bug/partition`, `bug/survivor`, or `bug/resume`. Fixed snapshots use `fix/partition`, `fix/survivor`, and `fix/resume` once verified. Aliases retain the original commit objects; history is not rewritten.
 
-## Scenario 1: duplicates survive partition boundaries
-Expected: a two-shard input containing equivalent normalized content retains one ID. Symptom: two IDs survive. Reproduce: `python -m pytest practice_regressions/test_scenarios.py::test_cross_partition -q` at `practice/partition`. Compare same-partition and cross-partition inputs; record what changes.
+## Bug 1: duplicates survive partition boundaries
+Expected: equivalent normalized content across two shards retains one ID. Actual: two IDs survive. At `bug/partition`, run:
+```sh
+python -m pytest -o testpaths=. -k cross_partition -q
+```
+Compare same-shard and cross-shard inputs; record what changes.
 
-## Scenario 2: survivor changes with concurrency
-Expected: minimum-ID survivor regardless of completion order. Symptom: a controlled two-worker completion-order replay chooses a different survivor from one worker. Reproduce: `python -m pytest practice_regressions/test_scenarios.py::test_survivor_concurrency -q` at `practice/survivor`. This harness deliberately controls timing; it is not a claim about any particular Ray scheduler order.
+## Bug 2: survivor changes with concurrency
+Expected: minimum-ID survivor regardless of completion order. Actual: a controlled two-worker replay chooses a different survivor from one worker. At `bug/survivor`, run:
+```sh
+python -m pytest -o testpaths=. -k survivor_concurrency -q
+```
+The harness controls timing; this is not a claim about a particular Ray scheduler order.
 
-## Scenario 3: resumed output differs from clean
-Expected: completed exact checkpoint survives resume. Symptom: interrupted/resumed exact-only run retains more IDs than a clean run. Reproduce: `python -m pytest practice_regressions/test_scenarios.py::test_resume_matches_clean -q` at `practice/resume`.
+## Bug 3: resumed output differs from clean
+Expected: completed exact checkpoint survives resume. Actual: interrupted/resumed exact-only execution retains extra IDs. At `bug/resume`, run:
+```sh
+python -m pytest -o testpaths=. -k resume_matches_clean -q
+```
 
-Write: problem → hypothesis → evidence → decision → fix → verification. `HINTS.md`, `SOLUTIONS.md`, and `practice_regressions/` are separate spoiler material. Your personal notes should be distinct from supplied investigation notes.
+Write problem → hypothesis → evidence → decision → fix → verification before opening `HINTS.md` or `SOLUTIONS.md`. Current fix evidence is on main; from a frozen snapshot, use `git show main:docs/learning/SOLUTIONS.md`. Preserve the bug snapshots when making your own fix branch.
