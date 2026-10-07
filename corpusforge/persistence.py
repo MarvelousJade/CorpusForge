@@ -64,6 +64,8 @@ class Store:
 
     def load(self, name):
         if name in self.manifest['stages']:
+            if name == 'exact':
+                return []
             return json.loads((self.root / f'{name}.json').read_text(encoding='utf-8'))
         return None
 
