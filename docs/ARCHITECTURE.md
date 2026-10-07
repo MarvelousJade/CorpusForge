@@ -10,6 +10,15 @@ A document is validated with its file/line on the coordinator. Text and metadata
 - `persistence.py`: fingerprints, stage checksums, atomic writes and single-writer lock
 - `benchmark.py`: synthetic generator and measurement harness
 
+| Component | Input → output | Dependencies | Likely failures |
+|---|---|---|---|
+| Core | Paths/records/config → validated documents, normalized rows, exact edges, roots, decisions | Standard library | Invalid records/IDs/Unicode; cap violations |
+| Near | Normalized rows/config → shingles, signatures, canonical pairs, verified edges/oracle | NumPy, stable hash functions | Hot buckets/candidate cap; LSH misses (quality limitation, not an exception) |
+| Ray backend | JSONL paths or prepared payloads → global exact edges/candidate pairs | Ray Data, shared core/near | Worker UDF errors, insufficient runtime CPU/memory, Arrow/serialization errors |
+| Pipeline | Input/output/config/backend/resume → report and stage/output artifacts | All comparison modules, Store; Ray lazily | Stage exceptions with backend/name context; incompatible resume |
+| Persistence | Contract/artifact bytes → atomic files, checksums, completed manifest | Standard library, installed package versions | Locked output, changed contract, missing/corrupt artifacts, filesystem errors |
+| Benchmark | Sizes/settings/seed → reproducible corpora and measurements | Pipeline, psutil, raylet RPC/grpcio | Parity assertion; telemetry unavailable (null/error); output collision |
+
 Ray reads original JSONL lines as text and decodes in batch UDFs, avoiding Arrow coercion of heterogeneous metadata. Coordinator validation reads the same files first to retain useful source/line diagnostics and reject duplicate IDs globally. This double read and collecting prepared rows are deliberate local-prototype compromises. Global groupby crosses input files and Ray blocks; no per-partition dedup shortcut. Pair emission is lazy, with per-band and global candidate caps. Verified edges and components remain in one coordinator process. Limits (defaults): 50 MB input, 10,000 documents, 100,000 text characters per document, 200,000 unique candidates; LSH expansion is documents × bands. Large hot buckets can still consume substantial group memory before pair rejection. These are bounds, not a production memory guarantee.
 
 ## Persistence
