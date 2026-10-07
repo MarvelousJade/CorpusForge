@@ -5,7 +5,7 @@ Small, inspectable text-curation prototype inspired by DataTrove. Python 3.11–
 ```sh
 python -m venv .venv
 # Activate .venv using your shell's command
-python -m pip install -e '.[test]'
+python -m pip install -e ".[test]"
 python -m pytest -q
 python -m corpusforge run --input data/sample --output runs/demo --backend sequential
 python -m corpusforge run --input data/sample --output runs/ray --backend ray

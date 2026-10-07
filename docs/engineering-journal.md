@@ -8,6 +8,8 @@ Only observed problems and actual checks are recorded. “Implementation session
 - A journal edit matched two identical placeholder phrases and was rejected without changing the file. Retried with unique contextual anchors.
 - The shell environment later lacked a discoverable Bash executable. Subsequent Windows commands used the background command runner with explicit `cmd.exe`-compatible syntax; no application workaround or platform-support claim follows from this.
 
+- Setup review: changed the optional-extras install argument from POSIX single quotes to double quotes, compatible with Windows cmd as well as common Unix shells. This was a portability review, not a claimed reproduced pip failure; final extras-install smoke verification is pending.
+
 ## J01 — JSON checkpoints changed edge types
 - **Context:** Whole-stage persistence/resume for sequential exact/near clustering.
 - **Symptom/discovery:** `pytest tests/test_recovery.py tests/test_exact.py tests/test_near.py -q --tb=short` failed at resume after `exact` and `candidates`: `TypeError: '<' not supported between instances of 'tuple' and 'list'`. Result: 2 failed, 15 passed. Reproduce with `test_resume[exact]`.
@@ -48,9 +50,18 @@ Only observed problems and actual checks are recorded. “Implementation session
 - **Root cause:** The measurement process conflated standalone sequential execution with sequential computation inside a still-live Ray runtime.
 - **Alternatives:** Label contamination only; spawn independent processes for every sample; measure all sequential repeats before cold/warm Ray repeats.
 - **Decision/tradeoffs:** Change: sequential repeats first, then one cold and two warm Ray runs per setting. Stop the wall-clock measurement when run artifacts are finalized, before profiler/RPC teardown. Keep earlier evidence labelled, not silently replace it. Driver imports/caches and OS/background load still make this a local, non-cold-cache-controlled experiment.
-- **Verification:** Original results establish parity, not a fair memory comparison. Complete baseline suite: 36 passed, 4 upstream warnings in 158.49s; isolation regression passes. Corrected matrix pending. Expand the corrected matrix to baseline plus isolated batch, worker, and LSH changes, rather than attributing pilot joint-setting differences to one factor. No memory-improvement claim yet.
+- **Verification:** Original results establish parity, not a fair memory comparison. Complete baseline suite: 36 passed, 4 upstream warnings in 158.49s; isolation regression passes. Fix/regression committed in `119fed4`. Corrected matrix completed: 48 measurements, all parity flags true and retained IDs equal across the observed settings. All 24 sequential rows have zero Ray samples, with tree RSS equal to driver RSS; all 24 Ray rows have positive telemetry samples and no RPC errors. Use baseline plus isolated batch/worker/LSH changes, rather than attributing pilot joint-setting differences to one factor. The fix corrects measurement isolation, not the curation algorithm.
 - **Limitations:** 100ms-plus-RPC sampling misses peaks; tree RSS double-counts shared pages. Cold means runtime startup, not a fresh OS cache or fresh interpreter.
 - **Involvement:** Implementation session reviewed evidence and added the regression. Shaoyu's personal investigation/learning: not reported.
+
+## Learning branch bugs and fixes — provenance
+
+These issues were introduced separately after complete baseline verification (36 passing checks); they were not defects discovered on main. Construction changes were known during investigation. Main remained at `80409b2` during creation; fixes restore its existing correct behavior. All three baseline regressions passed before injection; each faulty checkpoint then produced an actual targeted failure:
+- `bug/partition` / `af15876`: 2 survivors rather than 1; 1 failed in 0.42s. Code comparison shows partition included in the content key. Restore global digest grouping; tradeoff is global coordination.
+- `bug/survivor` / `7f1e6ba`: controlled one/two-thread completion replay selected `z` versus `a`; 1 failed in 0.45s. Code comparison shows first-arrival rather than minimum-ID selection. Restore canonical minimum; tradeoff is ordering/ID comparison work.
+- `bug/resume` / `749df11`: resumed kept bytes differ from clean; 1 failed in 0.90s. Loader discarded completed exact edges. Restore validated checkpoint loading; tradeoff is decoding/validation cost.
+
+Reproductions, progressive hints, diagnoses and verification fixtures are separate. Verified at historical fix commits: `504d033` partition check passed in 0.36s; `3f43243` concurrency check passed in 0.31s. After the resume fix, all three checks passed in 1.07s. Full corrected branch `01d8e28`: 36 checks passed with 4 upstream warnings in 132.64s; dependency, compilation, diff and source-equality checks passed. No unresolved learning-branch issue remains; integration will preserve the history without changing main's existing application behavior. Implementation session introduced, reproduced and inspected these learning-branch issues; no personal investigation by Shaoyu is claimed. Personal stories require your later notes. The newer integration request supersedes permanent branch isolation; bug snapshots remain available, and main will receive only the checked, corrected final tree.
 
 ## H00 — Deterministic global groups with heterogeneous metadata
 - **Context:** Mapping the document contract to Ray Data batches and global dedup groups.
@@ -65,5 +76,5 @@ Only observed problems and actual checks are recorded. “Implementation session
 - **Difficulty/evidence:** Review of Ray's installed `internal_api.py` showed actual `store_stats.object_store_bytes_used`. Cluster logical resource capacity is not allocator usage; subtracting resource availability would not establish object-store memory consumption. No fabricated runtime failure is claimed.
 - **Approaches/decision:** Replace the draft resource-capacity estimate with pinned-version raylet store-stat RPCs, confined to benchmark instrumentation. Add `grpcio` for a concrete telemetry need. Null measurements and recorded errors are preferable to inventing zero usage.
 - **Tradeoffs:** Version-sensitive private API and RPC overhead; sampling misses short peaks. Process-tree RSS can double-count shared pages. This is local evidence, not a production profiler.
-- **Verification:** Dependency installation and packaging checks completed. Pilot's 12 Ray measurements have positive telemetry sample counts and no recorded RPC errors; corrected isolated matrix and benchmark commit pending.
+- **Verification:** Dependency installation and packaging checks completed. Pilot's 12 Ray measurements have positive telemetry sample counts and no recorded RPC errors; benchmark harness committed as `119fed4`; corrected isolated matrix completed (48 measurements), all 24 Ray rows have valid telemetry and no recorded RPC errors. Published in `docs/BENCHMARKS.md` and raw rows.
 - **Involvement:** Implementation-session code review/design change. Shaoyu's personal investigation/learning: not reported.

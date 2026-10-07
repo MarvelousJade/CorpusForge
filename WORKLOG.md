@@ -6,9 +6,9 @@ New isolated repository; parent directory has no usable Git repository and no AG
 - [x] Seeded MinHash, LSH candidates, verified edges, clustering, oracle tests
 - [x] Real Ray Data batch/global-group backend and parity tests
 - [x] Atomic stage persistence, fingerprint validation, interruption/resume tests (both backends)
-- [ ] Reproducible synthetic benchmark, actual measurements
+- [x] Reproducible synthetic benchmark, actual measurements
 - [x] Architecture, decisions, attribution, interview preparation
-- [ ] Separate learning branch/checkpoints; investigate and record evidence
+- [x] Learning branch bug snapshots, regressions and separate fixes (full branch verified; integration pending)
 - [ ] Final checks and diff review
 
 ## Increment 1 verification
@@ -29,8 +29,18 @@ First one-CPU fixture stalled: monitor showed 0.01 CPU occupied by control work 
 
 ## Complete baseline verification before learning checkpoints
 
-`python -m pytest tests practice_regressions -q --tb=short`: **36 passed**, 4 upstream Ray warnings, 158.49s. Includes expanded prepared/exact artifact parity, heterogeneous Unicode metadata, Unicode-normalization controls, benchmark isolation regression, CLI diagnostics/recovery, documentation links and all three fixed practice regressions. `pip check`: no broken requirements. `compileall` and `git diff --check`: passed.
+`python -m pytest tests practice_regressions -q --tb=short`: **36 passed**, 4 upstream Ray warnings, 158.49s. Includes expanded prepared/exact artifact parity, heterogeneous Unicode metadata, Unicode-normalization controls, benchmark isolation regression, CLI diagnostics/recovery, documentation links and all three fixed learning-branch regressions. `pip check`: no broken requirements. `compileall` and `git diff --check`: passed.
 
 Pilot benchmark completed 24 measurements with retained-ID parity, but 8 sequential memory rows included an idle Ray runtime. Raw evidence retained and regression reproduced before fixing loop order. Corrected one-factor benchmark matrix will be published separately; measurements are still a completion gate.
+
+## Learning checkpoint receipts
+
+Passing base `80409b2`. Separate branch `learning/exercises`, worktree `../CorpusForge-learning`; main untouched. Actual targeted failures: partition `af15876` (2 rather than 1 survivor, 0.42s), survivor `7f1e6ba` (z versus a under controlled completion replay, 0.45s), resume `749df11` (kept-byte divergence, 0.90s). Each exit 1 was checked; aliases `bug/partition`, `bug/survivor`, `bug/resume` refer to preserved bug snapshots. These issues were introduced on the learning branch separately from working main; no production-incident or personal investigation claims follow. Solutions/evidence are separate from symptoms/hints. Individual fixes verified: `504d033` partition check passed (0.36s), `3f43243` concurrency check passed (0.31s), all three checks after resume fix `01d8e28` passed (1.07s).
+
+Benchmark harness: `119fed4`; learning preparation: `80409b2`. Corrected 48-row benchmark matrix completed with baseline and isolated batch/worker/LSH changes; all retained-ID checks passed. All sequential rows have zero Ray telemetry samples; all Ray rows have valid telemetry/no errors. Raw results and timings published in docs/benchmarks; interpretation/limits in docs/BENCHMARKS.md. New integration instruction: retain bug/fix history and merge only after full corrected-branch checks pass; no unresolved issue may enter main.
+
+## Corrected learning branch gate
+
+`01d8e28`: 36 checks passed, 4 upstream warnings, 132.64s. `pip check`, compilation, diff checks and application-source comparison against main passed. Separate fixes `504d033`, `3f43243`, `01d8e28` restore already-correct main behavior. Bug aliases and fixed aliases preserve original objects; no history rewrite. Documentation-only follow-up and non-fast-forward integration remain before final main sign-off.
 
 Contract: IDs are nonempty strings, ordered lexicographically. Metadata must be an object. Unknown fields rejected. Empty normalized strings deduplicate exactly. Original text and metadata are never rewritten. Local prototype with explicit input/record/candidate caps. No claims of production-scale execution or perfect LSH recall.
