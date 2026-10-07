@@ -91,7 +91,7 @@ def ingest(paths, config):
 
 def prepare(document, config):
     text = normalize(document['text'], config)
-    return dict(document=document, id=document['id'], normalized=text, digest=stable_hash(text))
+    return dict(document=document, id=document['id'], normalized=text, digest=stable_hash(text), partition=int(stable_hash(document['id']),16)%config.workers)
 
 
 def exact_group(records):
@@ -105,7 +105,7 @@ def exact_group(records):
 def exact_edges(records):
     groups = {}
     for record in records:
-        groups.setdefault(record['digest'], []).append(record)
+        groups.setdefault((record['partition'], record['digest']), []).append(record)
     return sorted(edge for group in groups.values() for edge in exact_group(group))
 
 
