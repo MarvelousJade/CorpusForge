@@ -10,7 +10,7 @@
 **Scope:** JSONL ingestion, configurable comparison normalization, exact dedup, verified MinHash/LSH near dedup, sequential/Ray parity, stage recovery and synthetic experiments. Excludes semantic similarity, image/video, language-aware tokenization, spam filtering, cloud ingestion and distributed clustering.
 
 ## 60-second introduction
-“CorpusForge is a small Python text-curation tool inspired by DataTrove. It preserves original documents while comparing configurable normalized copies. Exact deduplication uses stable hashes plus content verification. Near deduplication uses word shingles, seeded MinHash signatures and LSH to propose pairs, exact Jaccard to verify them, and deterministic connected components to choose survivors. The sequential and Ray Data backends share comparison functions. Ray handles batches and global grouping; a bounded coordinator verifies edges and clusters. Checksummed stage manifests make compatible runs resumable. The strongest verified result is backend-identical decisions under different batch and worker settings, plus resume/clean parity. Benchmarks are local/synthetic evidence, not proof that parallelism always helps.”
+“CorpusForge is a small Python text-curation tool inspired by DataTrove. It preserves original documents while comparing configurable normalized copies. Exact deduplication uses stable hashes plus content verification. Near deduplication uses word shingles, seeded MinHash signatures and LSH to propose pairs, exact Jaccard to verify them, and deterministic connected components to choose survivors. The sequential and Ray Data backends share comparison functions. Ray handles batches and global grouping; a bounded coordinator verifies edges and clusters. Checksummed stage manifests make compatible runs resumable. The strongest verified result is backend-identical decisions under different batch and worker settings, plus resume/clean parity. Local synthetic benchmarks show Ray is slower at the tested scale: for 120 records, baseline sequential averaged 0.334 seconds versus 25.172 seconds for warm Ray. That evidence is not a production-scale claim.”
 
 The implementation uses NumPy for its affine hash vectors. Do not claim personal debugging or learning you have not performed. Add measured benchmark figures only after reading the published results.
 
@@ -66,9 +66,9 @@ These are implementation-session evidence, **not personal stories attributed to 
 2. **Actual development issue: Windows locks.** Problem: second writer raised raw PermissionError. Hypothesis: error precedes lock acquisition. Evidence: traceback at lock-byte read. Decision/fix: use fstat instead of reading the locked byte. Tradeoff: explicit platform branches/local filesystem assumptions. Verification: nested writer rejection and recovery tests pass. Lesson: OS lock semantics differ; test the target platform.
 3. **Actual development issue: Ray scheduling headroom.** Problem: tiny fixture stalled. Initial startup hypothesis was rejected by a healthy active node. Evidence: 0.01/1 CPU used and a pending 1-CPU task. Decision/fix: allocate workers+1 runtime CPUs for control headroom. Tradeoff: requested compute concurrency and runtime allocation differ. Verification: 4 real Ray tests passed in 156.42s. Lesson: distinguish schedulability from workload speed; inspect resource demand.
 4. **Design hurdle: LSH quality versus workload.** Problem: exhaustive comparisons are quadratic. Hypothesis: probabilistic candidates plus exact verification give a useful bounded workflow. Evidence: exhaustive small-fixture oracle, threshold and transitive tests; runtime misses explicitly counted. Decision/fix: seeded bands and exact Jaccard, abort on caps. Tradeoff: verification fixes false positives, not missed candidates. Lesson: correctness claims must separate retrieval from verification.
-5. **Actual development issue: benchmark isolation.** Problem: sequential samples reported Ray memory. Hypothesis: alternating repeats leaves an idle runtime. Evidence: 8 pilot sequential rows contain Ray telemetry; scheduling regression reproduced it. Decision/fix: sequential repeats first, then cold/warm Ray; preserve labelled pilot data. Tradeoff: interpreter caches and background load still matter. Verification: regression passes in the 36-test baseline; corrected matrix is reported separately. Lesson: validate what measurements represent before publishing performance claims.
+5. **Actual development issue: benchmark isolation.** Problem: sequential samples reported Ray memory. Hypothesis: alternating repeats leaves an idle runtime. Evidence: 8 pilot sequential rows contain Ray telemetry; scheduling regression reproduced it. Decision/fix: sequential repeats first, then cold/warm Ray; preserve labelled pilot data. Tradeoff: interpreter caches and background load still matter. Verification: regression passes in the 36-test baseline; the corrected 48-measurement matrix is published separately in `docs/BENCHMARKS.md`. Lesson: validate what measurements represent before publishing performance claims.
 
-Separate planted practice scenarios: [exercises](learning/EXERCISES.md). Their outcomes are learning evidence, not production incidents.
+Separate learning-branch [bugs and fixes](learning/EXERCISES.md) were introduced after the working baseline. Their outcomes are learning evidence, not production incidents.
 
 ## Questions and concise answer outlines
 | Question | Answer outline / follow-up |
@@ -94,9 +94,9 @@ Explain the distinction between data preservation and comparison normalization; 
 1. Read purpose/diagram and state scope without notes.
 2. Run both backends and inspect original versus removed records.
 3. Read the six files in order and trace one ID.
-4. Reproduce the real regression tests; later investigate practice tags before spoilers.
+4. Reproduce the real regression tests; later investigate bug snapshots before solutions.
 5. Read decisions, journal, measured benchmarks and limitations.
-6. Practice 60-second/three-minute explanations, then answer follow-ups without jargon.
+6. Rehearse 60-second/three-minute explanations, then answer follow-ups without jargon.
 
 **Demo (fresh output paths):**
 ```sh
@@ -108,7 +108,7 @@ python -m corpusforge run --input data/sample --output runs/interview-resume --s
 python -m corpusforge run --input data/sample --output runs/interview-resume --resume
 python -m pytest practice_regressions -q
 ```
-Show identical kept/removed artifacts (not timing fields), manifest checksums and oracle misses. Show the published benchmark command/results, including slowdowns. No new benchmark numbers should be improvised during the interview.
+Show identical kept/removed artifacts (not timing fields), manifest checksums and oracle misses. Show the [published benchmark command/results](BENCHMARKS.md), including slowdowns. No new benchmark numbers should be improvised during the interview.
 
 ## One-page talking points
 - **Problem:** redundant text; preserve originals/provenance and make decisions inspectable.
@@ -118,5 +118,5 @@ Show identical kept/removed artifacts (not timing fields), manifest checksums an
 - **Three real bugs:** JSON tuple/list boundary; Windows lock read; fractional Ray CPU reservation.
 - **Tradeoffs:** casefold can erase meaning; LSH misses; transitive groups; Ray overhead; driver/hot-bucket memory limits.
 - **Evidence:** actual tests and local synthetic measurements; no production-user/impact claims.
-- **Personal contribution/learning:** use only your own completed notes. Separate supplied development evidence and planted exercises.
+- **Personal contribution/learning:** use only your own completed notes. Separate supplied development evidence and learning-branch issues.
 - **Next:** language-aware comparisons and better memory/coordination only after measuring need. No image/video scope creep.

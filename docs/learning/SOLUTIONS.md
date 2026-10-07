@@ -8,7 +8,7 @@ Passing base: `80409b2` (36 checks passed in 158.49s). Each bug snapshot genuine
 |---|---|---|---|
 | `bug/partition` | `af15876` | Two survivors (`d0`, `d2`) instead of one; 0.42s | `504d033` |
 | `bug/survivor` | `7f1e6ba` | One-worker replay chose `z`, two-worker replay chose `a`; 0.45s | `3f43243` |
-| `bug/resume` | `749df11` | Resumed kept bytes differ from clean; 0.90s | Resume fix pending commit |
+| `bug/resume` | `749df11` | Resumed kept bytes differ from clean; 0.90s | `01d8e28` |
 
 The first two restoring commits returned to the working baseline before the next issue was introduced. Their original messages and bug commits remain unchanged. The branch must pass all required checks before authorized non-fast-forward integration. This preserves history without leaving a broken final state on main.
 
@@ -36,7 +36,7 @@ The first two restoring commits returned to the working baseline before the next
 **Root cause:** Completion skipped computation and discarded its result.
 **Fix:** Load the actual validated checkpoint. A completion entry skips computation, not meaning.
 **Tradeoff:** Decoding/checksum costs; interrupted stages still rerun entirely.
-**Verification:** `resume_matches_clean` regression; all three regressions pass in the corrected worktree (1.07s). Full branch verification remains the merge gate.
+**Verification:** `resume_matches_clean` regression; all three regressions pass in the corrected worktree (1.07s). Corrected branch at `01d8e28`: 36 checks passed in 132.64s, dependency/compilation/diff checks passed, and application sources equal main. The final integration remains a non-fast-forward merge with history preserved.
 **Lesson:** Verify persistence transitions, not just uninterrupted execution.
 
 ## Investigation ownership
