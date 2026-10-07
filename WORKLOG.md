@@ -5,7 +5,7 @@ New isolated repository; parent directory has no usable Git repository and no AG
 - [x] Ingestion, normalization, deterministic exact dedup, diagnostics
 - [x] Seeded MinHash, LSH candidates, verified edges, clustering, oracle tests
 - [ ] Real Ray Data batch/global-group backend and parity tests
-- [ ] Atomic stage persistence, fingerprint validation, interruption/resume tests
+- [x] Atomic stage persistence, fingerprint validation, interruption/resume tests (sequential verified; Ray check pending)
 - [ ] Reproducible synthetic benchmark, actual measurements
 - [ ] Architecture, decisions, attribution, interview preparation
 - [ ] Separate learning branch/checkpoints; investigate and record evidence
@@ -18,5 +18,9 @@ New isolated repository; parent directory has no usable Git repository and no AG
 ## Increment 2 verification
 
 Full suite at this increment: 10 passed (1.43s); sequential near-enabled sample CLI exited 0. Oracle fixture establishes candidate coverage for that fixture only; explicit empty candidates report misses. Threshold equality, short/repetitive text, seed determinism and transitive clusters tested. Reference commit and independent implementation differences recorded in REFERENCES.md. Diff reviewed before commit.
+
+## Recovery investigation
+
+Initial recovery check: 2 failures, 15 passes. Cached JSON edges reload as lists; newly computed edges were tuples. Sorting the mixed representations failed. Normalize all edges to tuples inside survivor selection. Follow-up: 1 failure, 20 passes; on Windows, the second writer's lock-byte read raised PermissionError before lock handling. Replace that read with fstat size inspection. Final targeted check: 22 passed (10.92s), including boundary interrupts, a partial uncommitted stage, changed inputs/configuration, missing/corrupt artifacts, locking and reproducible synthetic generation. Ray integration remains a separate completion gate.
 
 Contract: IDs are nonempty strings, ordered lexicographically. Metadata must be an object. Unknown fields rejected. Empty normalized strings deduplicate exactly. Original text and metadata are never rewritten. Local prototype with explicit input/record/candidate caps. No claims of production-scale execution or perfect LSH recall.

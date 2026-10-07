@@ -1,5 +1,5 @@
 """Pure, backend-independent comparison functions."""
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 import hashlib
 import json
 import unicodedata
@@ -58,6 +58,10 @@ def validate(record, source, line, config):
         raise ValueError(f'{prefix}: text must be a string')
     if 'metadata' in record and not isinstance(record['metadata'], dict):
         raise ValueError(f'{prefix}: metadata must be an object')
+    try:
+        json.dumps(record, ensure_ascii=False).encode('utf-8')
+    except UnicodeError as exc:
+        raise ValueError(f'{prefix}: invalid Unicode scalar value') from exc
     if len(record['text']) > config.max_text_chars:
         raise ValueError(f'{prefix}: text exceeds max_text_chars')
     return record
@@ -65,11 +69,14 @@ def validate(record, source, line, config):
 
 def ingest(paths, config):
     docs, seen = [], {}
+    def reject_constant(value):
+        raise ValueError(f'non-JSON constant {value}')
+
     for path in paths:
-        with open(path, encoding='utf-8') as stream:
+        with open(path, 'rb') as stream:
             for line, raw in enumerate(stream, 1):
                 try:
-                    record = json.loads(raw)
+                    record = json.loads(raw.decode('utf-8'), parse_constant=reject_constant)
                 except (ValueError, UnicodeError) as exc:
                     raise ValueError(f'{path}:{line}: malformed JSON: {exc}') from exc
                 validate(record, path, line, config)
@@ -111,7 +118,7 @@ def survivors(ids, edges):
             identifier = parent[identifier]
         return identifier
 
-    for a, b in sorted(edges):
+    for a, b in sorted(tuple(edge) for edge in edges):
         a, b = root(a), root(b)
         parent[max(a, b)] = min(a, b)
     return {identifier: root(identifier) for identifier in sorted(parent)}

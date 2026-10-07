@@ -19,7 +19,7 @@ def test_cross_file_deterministic_metadata(tmp_path):
     assert outputs(records[::-1], exact_edges(records[::-1])) == (kept, removed)
 
 
-@pytest.mark.parametrize('raw', ['{', '{}', '{"id":"a","text":4}', '{"id":"a","text":"", "metadata":0}'])
+@pytest.mark.parametrize('raw', ['{', '{}', '{"id":"a","text":4}', '{"id":"a","text":"", "metadata":0}', '{"id":"a","text":"", "metadata":{"x":NaN}}'])
 def test_bad_records(tmp_path, raw):
     path = tmp_path / 'bad.jsonl'
     path.write_text(raw)
@@ -31,6 +31,13 @@ def test_duplicate_ids(tmp_path):
     path = tmp_path / 'bad.jsonl'
     path.write_text('{"id":"a","text":""}\n' * 2)
     with pytest.raises(ValueError, match=r'bad.jsonl:2: duplicate id'):
+        ingest([path], Config())
+
+
+def test_invalid_utf8(tmp_path):
+    path = tmp_path/'bad.jsonl'
+    path.write_bytes(b'\xff')
+    with pytest.raises(ValueError, match='bad.jsonl:1'):
         ingest([path], Config())
 
 

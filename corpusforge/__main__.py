@@ -1,50 +1,46 @@
 import argparse
-from dataclasses import asdict
 import json
-from pathlib import Path
-import time
-from .core import Config, ingest, prepare, exact_edges, outputs, survivors
-from .near import add_signature, candidates, verify, oracle
+from .core import Config
+from .pipeline import run, Interrupted
 
 
 def main():
     parser = argparse.ArgumentParser(prog='corpusforge')
     sub = parser.add_subparsers(dest='command', required=True)
-    run = sub.add_parser('run')
-    run.add_argument('--input', required=True)
-    run.add_argument('--output', required=True)
-    run.add_argument('--backend', choices=['sequential', 'ray'], default='sequential')
-    run.add_argument('--exact-only', action='store_true')
-    run.add_argument('--seed', type=int, default=42)
-    run.add_argument('--bands', type=int, default=16)
-    run.add_argument('--rows', type=int, default=4)
-    run.add_argument('--shingle-size', type=int, default=3)
-    run.add_argument('--threshold', type=float, default=.8)
+    command = sub.add_parser('run')
+    command.add_argument('--input', required=True)
+    command.add_argument('--output', required=True)
+    command.add_argument('--backend', choices=['sequential', 'ray'], default='sequential')
+    command.add_argument('--resume', action='store_true')
+    command.add_argument('--stop-after', choices=['prepared', 'exact', 'candidates', 'verified', 'decisions'], help='practice interruption after a completed stage')
+    command.add_argument('--exact-only', action='store_true')
+    command.add_argument('--preserve-case', action='store_true')
+    command.add_argument('--preserve-whitespace', action='store_true')
+    command.add_argument('--unicode-form', choices=['NFC', 'NFKC', 'none'], default='NFC')
+    defaults = Config()
+    for name in ('seed', 'bands', 'rows', 'shingle_size', 'batch_size', 'workers', 'max_documents', 'max_candidates', 'max_input_bytes', 'max_text_chars'):
+        command.add_argument('--'+name.replace('_','-'), type=int, default=getattr(defaults,name))
+    command.add_argument('--threshold', type=float, default=.8)
+    bench = sub.add_parser('benchmark')
+    bench.add_argument('--output', required=True)
+    bench.add_argument('--sizes', type=int, nargs='+', default=[40, 120])
+    bench.add_argument('--repeats', type=int, default=3)
+    bench.add_argument('--seed', type=int, default=42)
+    bench.add_argument('--settings', nargs='+', default=['16,1,16,4', '64,2,32,2'], help='batch,workers,bands,rows tuples')
     args = parser.parse_args()
     try:
-        if args.backend != 'sequential':
-            raise ValueError('Ray backend not implemented yet')
-        start = time.perf_counter()
-        source = Path(args.input)
-        paths = sorted(source.rglob('*.jsonl')) if source.is_dir() else [source]
-        if not paths:
-            raise ValueError('no JSONL inputs')
-        config = Config(near=not args.exact_only, seed=args.seed, bands=args.bands, rows=args.rows,
-                        shingle_size=args.shingle_size, threshold=args.threshold)
-        records = [add_signature(prepare(doc, config), config) for doc in ingest(paths, config)]
-        exact = exact_edges(records)
-        roots = survivors([r['id'] for r in records], exact)
-        representatives = [r for r in records if roots[r['id']] == r['id']]
-        pairs = candidates(representatives, config)
-        near = verify(representatives, pairs, config.threshold)
-        quality = oracle(representatives, pairs, config) if config.near else {'status': 'disabled'}
-        kept, removed = outputs(records, exact, near)
-        target = Path(args.output)
-        target.mkdir(parents=True, exist_ok=True)
-        for name, rows in [('kept', kept), ('removed', removed)]:
-            (target / f'{name}.jsonl').write_text(''.join(json.dumps(r, ensure_ascii=False) + '\n' for r in rows), encoding='utf-8')
-        (target / 'report.json').write_text(json.dumps(dict(input=len(records), kept=len(kept), removed=len(removed), configuration=asdict(config), candidates=len(pairs), verified_edges=len(near), quality=quality, seconds=time.perf_counter()-start), indent=2))
-    except (ValueError, OSError) as exc:
+        if args.command == 'benchmark':
+            from .benchmark import benchmark
+            settings = [tuple(map(int, value.split(','))) for value in args.settings]
+            if any(len(s)!=4 for s in settings) or args.repeats < 2 or min(args.sizes) < 1:
+                raise ValueError('settings need four integers; repeats >=2 and sizes >=1')
+            benchmark(args.output, args.sizes, args.repeats, settings, args.seed)
+        else:
+            config = Config(**{name: getattr(args,name) for name in ('seed','bands','rows','shingle_size','threshold','batch_size','workers','max_documents','max_candidates','max_input_bytes','max_text_chars','unicode_form')},
+                            near=not args.exact_only, casefold=not args.preserve_case, whitespace=not args.preserve_whitespace)
+            report = run(args.input, args.output, config, args.backend, args.resume, args.stop_after)
+            print(json.dumps({'kept':report['kept'], 'removed':report['removed'], 'seconds':report['seconds']}))
+    except (ValueError, OSError, RuntimeError) as exc:
         parser.exit(2, f'corpusforge: {exc}\n')
 
 
