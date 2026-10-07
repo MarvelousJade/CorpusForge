@@ -14,12 +14,15 @@ def test_ray_parity(tmp_path, batch, workers):
     texts = ['a b c d e f g h', ' A B C D E F G H ', 'a b c d e f g h i',
              'q r s t u', 'x x x x x', 'x x x x', 'hi', 'hi', '', '  ']
     for i, text in enumerate(texts):
-        (source / f'{i}.jsonl').write_text(json.dumps({'id': f'{9-i:02}', 'text': text, 'metadata': {'index': i}})+'\n')
+        document = {'id': f'{9-i:02}', 'text': text}
+        if i % 3:
+            document['metadata'] = {'index': i} if i % 2 else {'source': ['café'], 'nested': {'ok': True}}
+        (source / f'{i}.jsonl').write_text(json.dumps(document, ensure_ascii=False)+'\n', encoding='utf-8')
     cfg = Config(batch_size=batch, workers=workers, bands=32, rows=1, threshold=.5)
     try:
         run(source, tmp_path/'seq', cfg)
         run(source, tmp_path/'ray', cfg, 'ray')
-        for name in ('kept.jsonl', 'removed.jsonl', 'candidates.json', 'verified.json'):
+        for name in ('prepared.json', 'exact.json', 'kept.jsonl', 'removed.jsonl', 'candidates.json', 'verified.json'):
             assert (tmp_path/'seq'/name).read_bytes() == (tmp_path/'ray'/name).read_bytes()
     finally:
         ray.shutdown()

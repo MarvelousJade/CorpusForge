@@ -31,13 +31,14 @@ A new output directory is required. `--resume` validates input fingerprints, con
 ## Benchmarks and learning
 
 ```sh
-python -m corpusforge benchmark --output runs/bench --sizes 40 120 --repeats 3 --settings 16,1,16,4 64,2,32,2
+python -m corpusforge benchmark --output runs/bench --sizes 40 120 --repeats 3 --settings 16,1,16,4 64,1,16,4 16,2,16,4 16,1,32,2
 ```
 
 This generates four-file synthetic corpora, sequential/Ray measurements, cold/warm labels, stage timings, sampled RSS/raylet object-store usage, candidate/oracle metrics and retained-ID parity checks. Results are local/synthetic evidence; startup and coordinator overhead may make Ray slower. Use a fresh directory for every experiment.
 
 - [Architecture and limits](docs/ARCHITECTURE.md)
 - [Engineering decisions](docs/DECISIONS.md)
+- [Reproducible benchmarks and measurement limitations](docs/BENCHMARKS.md)
 - Local dependency snapshot: `requirements-local.txt` (benchmark environment; pin with `pip install -r requirements-local.txt`)
 - `psutil` measures process memory; `grpcio` supports benchmark-only raylet memory-stat RPCs.
 - [Interview preparation](docs/interview-guide.md)

@@ -26,7 +26,7 @@ def main():
     bench.add_argument('--sizes', type=int, nargs='+', default=[40, 120])
     bench.add_argument('--repeats', type=int, default=3)
     bench.add_argument('--seed', type=int, default=42)
-    bench.add_argument('--settings', nargs='+', default=['16,1,16,4', '64,2,32,2'], help='batch,workers,bands,rows tuples')
+    bench.add_argument('--settings', nargs='+', default=['16,1,16,4', '64,1,16,4', '16,2,16,4', '16,1,32,2'], help='batch,workers,bands,rows tuples')
     args = parser.parse_args()
     try:
         if args.command == 'benchmark':

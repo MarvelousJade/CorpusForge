@@ -1,6 +1,6 @@
 import json
 import pytest
-from corpusforge.core import Config, ingest, prepare, exact_edges, outputs
+from corpusforge.core import Config, ingest, prepare, exact_edges, outputs, normalize
 
 
 def test_cross_file_deterministic_metadata(tmp_path):
@@ -39,6 +39,13 @@ def test_invalid_utf8(tmp_path):
     path.write_bytes(b'\xff')
     with pytest.raises(ValueError, match='bad.jsonl:1'):
         ingest([path], Config())
+
+
+def test_unicode_comparison_controls():
+    assert normalize('e\u0301', Config()) == normalize('é', Config())
+    assert normalize('e\u0301', Config(unicode_form='none')) != normalize('é', Config(unicode_form='none'))
+    assert normalize('Ａ', Config(unicode_form='NFKC')) == 'a'
+    assert normalize('Ａ', Config()) != 'a'
 
 
 def test_hash_collision_and_normalization():
