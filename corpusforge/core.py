@@ -99,7 +99,7 @@ def exact_group(records):
     groups = {}
     for record in records:
         groups.setdefault(record['normalized'], []).append(record['id'])
-    return [(min(ids), other) for ids in groups.values() for other in sorted(ids) if other != min(ids)]
+    return [(ids[0], other) for ids in groups.values() for other in ids[1:]]
 
 
 def exact_edges(records):
