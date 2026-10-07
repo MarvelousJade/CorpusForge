@@ -28,7 +28,7 @@ The pilot interleaved backends, leaving an idle Ray runtime during 8 sequential 
 
 ## Corrected results
 
-The corrected 48-measurement matrix completed successfully. [Raw results](benchmarks/results.json) and [all individual timings/throughputs](benchmarks/SUMMARY.md) are published separately from the pilot. Execution code: `119fed4` (working baseline `80409b2`). Hardware: Windows 11 (10.0.26200), AMD64 Family 23 Model 113, 6 physical/12 logical CPUs, 17,101,787,136 bytes RAM; Python 3.12.10, Ray 2.55.1, NumPy 2.5.3. Other versions are pinned in `requirements-local.txt`.
+The corrected 48-measurement matrix completed successfully. [Raw results](benchmarks/results.json) and [all individual timings/throughputs](benchmarks/SUMMARY.md) are published separately from the pilot. Execution code: `119fed4` (working baseline `db828f4`). Hardware: Windows 11 (10.0.26200), AMD64 Family 23 Model 113, 6 physical/12 logical CPUs, 17,101,787,136 bytes RAM; Python 3.12.10, Ray 2.55.1, NumPy 2.5.3. Other versions are pinned in `requirements-local.txt`.
 
 | N | Batch/workers | Bands×rows | Sequential mean ± SD (n=3), s | Ray cold (n=1), s | Ray warm mean ± SD (n=2), s |
 |---|---|---|---:|---:|---:|

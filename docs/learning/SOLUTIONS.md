@@ -2,15 +2,15 @@
 
 These issues originated on the learning branch, constructed separately from working main. Main already contained equivalent correct behavior. Commit identity does not establish personal investigation; no personal debugging by Shaoyu has been reported. Current evidence is available with `git show main:docs/learning/SOLUTIONS.md` from an older snapshot.
 
-Passing base: `80409b2` (36 checks passed in 158.49s). Each bug snapshot genuinely failed its targeted regression with exit 1:
+Passing base: `db828f4` (36 checks passed in 158.49s). Each bug snapshot genuinely failed its targeted regression with exit 1:
 
 | Bug alias | Commit | Observed failure | Separate restoring/fix commit |
 |---|---|---|---|
-| `bug/partition` | `af15876` | Two survivors (`d0`, `d2`) instead of one; 0.42s | `504d033` |
-| `bug/survivor` | `7f1e6ba` | One-worker replay chose `z`, two-worker replay chose `a`; 0.45s | `3f43243` |
-| `bug/resume` | `749df11` | Resumed kept bytes differ from clean; 0.90s | `01d8e28` |
+| `bug/partition` | `0adcd10` | Two survivors (`d0`, `d2`) instead of one; 0.42s | `f4542c0` |
+| `bug/survivor` | `7b150e6` | One-worker replay chose `z`, two-worker replay chose `a`; 0.45s | `c884149` |
+| `bug/resume` | `44f21ff` | Resumed kept bytes differ from clean; 0.90s | `4c8c0c7` |
 
-The first two restoring commits returned to the working baseline before the next issue was introduced. Their original messages and bug commits remain unchanged. The branch must pass all required checks before authorized non-fast-forward integration. This preserves history without leaving a broken final state on main.
+The first two restoring commits returned to the working baseline before the next issue was introduced. At the user's explicit request, subjects were reworded to functional descriptions; trees, identities, dates and bug/fix topology are unchanged. IDs in this document are current aliases for the identical trees originally verified. The old/new mapping is in `docs/commit-reference-map.json`. The branch must pass all required checks before authorized non-fast-forward integration. This preserves history without leaving a broken final state on main.
 
 ## Fix 1: global equality groups
 **Problem:** Equivalent content across shards survives.
@@ -18,7 +18,7 @@ The first two restoring commits returned to the working baseline before the next
 **Root cause:** Partitioning incorrectly scopes equality.
 **Fix:** Group globally by digest, then verify normalized content. Partitioning schedules work only.
 **Tradeoff:** Global shuffle/coordination rather than shard independence.
-**Verification:** `cross_partition` regression; historical restoring commit `504d033`: passed in 0.36s.
+**Verification:** `cross_partition` regression; historical restoring commit `f4542c0`: passed in 0.36s.
 **Lesson:** Local correctness is not global correctness.
 
 ## Fix 2: deterministic survivor
@@ -27,7 +27,7 @@ The first two restoring commits returned to the working baseline before the next
 **Root cause:** `ids[0]` was used instead of minimum ID.
 **Fix:** Select `min(ids)` and canonicalize group edges, independent of scheduling.
 **Tradeoff:** ID comparisons/output ordering rather than first-arrival shortcuts.
-**Verification:** `survivor_concurrency` regression; historical restoring commit `3f43243`: passed in 0.31s.
+**Verification:** `survivor_concurrency` regression; historical restoring commit `c884149`: passed in 0.31s.
 **Lesson:** Completion order is not a stable identity policy.
 
 ## Fix 3: preserve completed-stage semantics
@@ -36,7 +36,7 @@ The first two restoring commits returned to the working baseline before the next
 **Root cause:** Completion skipped computation and discarded its result.
 **Fix:** Load the actual validated checkpoint. A completion entry skips computation, not meaning.
 **Tradeoff:** Decoding/checksum costs; interrupted stages still rerun entirely.
-**Verification:** `resume_matches_clean` regression; all three regressions pass in the corrected worktree (1.07s). Corrected branch at `01d8e28`: 36 checks passed in 132.64s, dependency/compilation/diff checks passed, and application sources equal main. The final integration remains a non-fast-forward merge with history preserved.
+**Verification:** `resume_matches_clean` regression; all three regressions pass in the corrected worktree (1.07s). Corrected branch at `4c8c0c7`: 36 checks passed in 132.64s, dependency/compilation/diff checks passed, and application sources equal main. The final integration remains a non-fast-forward merge with history preserved.
 **Lesson:** Verify persistence transitions, not just uninterrupted execution.
 
 ## Investigation ownership

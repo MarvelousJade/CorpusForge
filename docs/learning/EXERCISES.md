@@ -1,6 +1,6 @@
 # Bugs — symptoms and reproduction
 
-These issues were introduced on a separate learning branch after validating a working baseline (`80409b2`). They were not defects discovered on main. Fixes restore behavior already present there. Historical bug snapshots remain available; only the corrected, fully checked branch state is eligible for integration.
+These issues were introduced on a separate learning branch after validating a working baseline (`db828f4`). They were not defects discovered on main. Fixes restore behavior already present there. Historical bug snapshots remain available; only the corrected, fully checked branch state is eligible for integration.
 
 Use a separate worktree and the main repository's virtualenv by absolute path. A `CorpusForge-learning` worktree already exists. For another:
 
@@ -8,7 +8,7 @@ Use a separate worktree and the main repository's virtualenv by absolute path. A
 git worktree add --detach ../CorpusForge-debug bug/partition
 ```
 
-Select snapshots with `git switch --detach bug/partition`, `bug/survivor`, or `bug/resume`. Fixed snapshots use `fix/partition`, `fix/survivor`, and `fix/resume` once verified. Aliases retain the original commit objects; history is not rewritten.
+Select snapshots with `git switch --detach bug/partition`, `bug/survivor`, or `bug/resume`. Fixed snapshots use `fix/partition`, `fix/survivor`, and `fix/resume` once verified. Checkpoint trees remain unchanged. Commit subjects were reworded at the user's explicit request; current IDs and the old/new mapping are recorded in `docs/commit-reference-map.json`.
 
 ## Bug 1: duplicates survive partition boundaries
 Expected: equivalent normalized content across two shards retains one ID. Actual: two IDs survive. At `bug/partition`, run:

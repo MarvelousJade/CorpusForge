@@ -8,8 +8,8 @@ New isolated repository; parent directory has no usable Git repository and no AG
 - [x] Atomic stage persistence, fingerprint validation, interruption/resume tests (both backends)
 - [x] Reproducible synthetic benchmark, actual measurements
 - [x] Architecture, decisions, attribution, interview preparation
-- [x] Learning branch bug snapshots, regressions and separate fixes (full branch verified; integration pending)
-- [ ] Final checks and diff review
+- [x] Bug snapshots, regressions and separate fixes (full branch verified; integrated with non-fast-forward history)
+- [x] Final checks and diff review
 
 ## Increment 1 verification
 
@@ -35,12 +35,12 @@ Pilot benchmark completed 24 measurements with retained-ID parity, but 8 sequent
 
 ## Learning checkpoint receipts
 
-Passing base `80409b2`. Separate branch `learning/exercises`, worktree `../CorpusForge-learning`; main untouched. Actual targeted failures: partition `af15876` (2 rather than 1 survivor, 0.42s), survivor `7f1e6ba` (z versus a under controlled completion replay, 0.45s), resume `749df11` (kept-byte divergence, 0.90s). Each exit 1 was checked; aliases `bug/partition`, `bug/survivor`, `bug/resume` refer to preserved bug snapshots. These issues were introduced on the learning branch separately from working main; no production-incident or personal investigation claims follow. Solutions/evidence are separate from symptoms/hints. Individual fixes verified: `504d033` partition check passed (0.36s), `3f43243` concurrency check passed (0.31s), all three checks after resume fix `01d8e28` passed (1.07s).
+Passing base `db828f4`. Separate branch `learning/exercises`, worktree `../CorpusForge-learning`; main untouched. Actual targeted failures: partition `0adcd10` (2 rather than 1 survivor, 0.42s), survivor `7b150e6` (z versus a under controlled completion replay, 0.45s), resume `44f21ff` (kept-byte divergence, 0.90s). Each exit 1 was checked; aliases `bug/partition`, `bug/survivor`, `bug/resume` refer to preserved bug snapshots. These issues were introduced on the learning branch separately from working main; no production-incident or personal investigation claims follow. Solutions/evidence are separate from symptoms/hints. Individual fixes verified: `f4542c0` partition check passed (0.36s), `c884149` concurrency check passed (0.31s), all three checks after resume fix `4c8c0c7` passed (1.07s).
 
-Benchmark harness: `119fed4`; learning preparation: `80409b2`. Corrected 48-row benchmark matrix completed with baseline and isolated batch/worker/LSH changes; all retained-ID checks passed. All sequential rows have zero Ray telemetry samples; all Ray rows have valid telemetry/no errors. Raw results and timings published in docs/benchmarks; interpretation/limits in docs/BENCHMARKS.md. New integration instruction: retain bug/fix history and merge only after full corrected-branch checks pass; no unresolved issue may enter main.
+Benchmark harness: `119fed4`; learning preparation: `db828f4`. Corrected 48-row benchmark matrix completed with baseline and isolated batch/worker/LSH changes; all retained-ID checks passed. All sequential rows have zero Ray telemetry samples; all Ray rows have valid telemetry/no errors. Raw results and timings published in docs/benchmarks; interpretation/limits in docs/BENCHMARKS.md. New integration instruction: retain bug/fix history and merge only after full corrected-branch checks pass; no unresolved issue may enter main.
 
 ## Corrected learning branch gate
 
-`01d8e28`: 36 checks passed, 4 upstream warnings, 132.64s. `pip check`, compilation, diff checks and application-source comparison against main passed. Separate fixes `504d033`, `3f43243`, `01d8e28` restore already-correct main behavior. Bug aliases and fixed aliases preserve original objects; no history rewrite. Documentation-only follow-up and non-fast-forward integration remain before final main sign-off.
+`4c8c0c7`: 36 checks passed, 4 upstream warnings, 132.64s. `pip check`, compilation, diff checks and application-source comparison against main passed. Separate fixes `f4542c0`, `c884149`, `4c8c0c7` restore already-correct main behavior. Commit subjects were reworded at the user's explicit request; checkpoint trees, identities, dates and topology were preserved. Current IDs resolve to the same trees previously checked. Original history is backed up locally in `runs/before-message-reword.bundle`, verified by Git; mapping is in `docs/commit-reference-map.json`. Documentation-only follow-up passed (2 checks, 0.12s). Non-fast-forward integration completed (`5ebb70e` after subject reword). Final main sign-off passed: 36 checks, 4 upstream warnings, 131.05s; editable extras install, dependency validation, compilation and diff checks passed. Sequential/Ray sample CLIs both kept 2 and removed 2; kept and removed JSONL files are byte-identical (0.070s sequential, 26.741s Ray).
 
 Contract: IDs are nonempty strings, ordered lexicographically. Metadata must be an object. Unknown fields rejected. Empty normalized strings deduplicate exactly. Original text and metadata are never rewritten. Local prototype with explicit input/record/candidate caps. No claims of production-scale execution or perfect LSH recall.

@@ -8,7 +8,9 @@ Only observed problems and actual checks are recorded. “Implementation session
 - A journal edit matched two identical placeholder phrases and was rejected without changing the file. Retried with unique contextual anchors.
 - The shell environment later lacked a discoverable Bash executable. Subsequent Windows commands used the background command runner with explicit `cmd.exe`-compatible syntax; no application workaround or platform-support claim follows from this.
 
-- Setup review: changed the optional-extras install argument from POSIX single quotes to double quotes, compatible with Windows cmd as well as common Unix shells. This was a portability review, not a claimed reproduced pip failure; final extras-install smoke verification is pending.
+- Setup review: changed the optional-extras install argument from POSIX single quotes to double quotes, compatible with Windows cmd as well as common Unix shells. This was a portability review, not a claimed reproduced pip failure; final extras-install smoke verification succeeded (`corpusforge-0.1.0` installed).
+
+- Commit-subject review: the user explicitly authorized functional wording. The message-only rewrite preserved every tree, author/committer identity, date and parent topology, and updated checkpoint references atomically. Git verified `runs/before-message-reword.bundle` as a complete backup. Current SHA references map to the identical trees originally checked; the old/new map is in `docs/commit-reference-map.json`. No push occurred.
 
 ## J01 — JSON checkpoints changed edge types
 - **Context:** Whole-stage persistence/resume for sequential exact/near clustering.
@@ -54,14 +56,18 @@ Only observed problems and actual checks are recorded. “Implementation session
 - **Limitations:** 100ms-plus-RPC sampling misses peaks; tree RSS double-counts shared pages. Cold means runtime startup, not a fresh OS cache or fresh interpreter.
 - **Involvement:** Implementation session reviewed evidence and added the regression. Shaoyu's personal investigation/learning: not reported.
 
-## Learning branch bugs and fixes — provenance
+## Final main verification
 
-These issues were introduced separately after complete baseline verification (36 passing checks); they were not defects discovered on main. Construction changes were known during investigation. Main remained at `80409b2` during creation; fixes restore its existing correct behavior. All three baseline regressions passed before injection; each faulty checkpoint then produced an actual targeted failure:
-- `bug/partition` / `af15876`: 2 survivors rather than 1; 1 failed in 0.42s. Code comparison shows partition included in the content key. Restore global digest grouping; tradeoff is global coordination.
-- `bug/survivor` / `7f1e6ba`: controlled one/two-thread completion replay selected `z` versus `a`; 1 failed in 0.45s. Code comparison shows first-arrival rather than minimum-ID selection. Restore canonical minimum; tradeoff is ordering/ID comparison work.
-- `bug/resume` / `749df11`: resumed kept bytes differ from clean; 1 failed in 0.90s. Loader discarded completed exact edges. Restore validated checkpoint loading; tradeoff is decoding/validation cost.
+After integration and message rewording: 36 checks passed, 4 upstream Ray warnings, 131.05s. Editable optional-extras install, dependency validation, compilation and diff checks passed. The sequential and real Ray CLI demonstrations each kept 2/removed 2; both JSONL outputs are byte-identical. Wall times were 0.070s and 26.741s respectively. Documentation-only final receipts receive a focused link check before the final commit. Windows was verified; Linux was not.
 
-Reproductions, progressive hints, diagnoses and verification fixtures are separate. Verified at historical fix commits: `504d033` partition check passed in 0.36s; `3f43243` concurrency check passed in 0.31s. After the resume fix, all three checks passed in 1.07s. Full corrected branch `01d8e28`: 36 checks passed with 4 upstream warnings in 132.64s; dependency, compilation, diff and source-equality checks passed. No unresolved learning-branch issue remains; integration will preserve the history without changing main's existing application behavior. Implementation session introduced, reproduced and inspected these learning-branch issues; no personal investigation by Shaoyu is claimed. Personal stories require your later notes. The newer integration request supersedes permanent branch isolation; bug snapshots remain available, and main will receive only the checked, corrected final tree.
+## Bug and fix provenance
+
+These issues were introduced separately after complete baseline verification (36 passing checks); they were not defects discovered on main. Construction changes were known during investigation. Main remained at `db828f4` during creation; fixes restore its existing correct behavior. All three baseline regressions passed before injection; each faulty checkpoint then produced an actual targeted failure:
+- `bug/partition` / `0adcd10`: 2 survivors rather than 1; 1 failed in 0.42s. Code comparison shows partition included in the content key. Restore global digest grouping; tradeoff is global coordination.
+- `bug/survivor` / `7b150e6`: controlled one/two-thread completion replay selected `z` versus `a`; 1 failed in 0.45s. Code comparison shows first-arrival rather than minimum-ID selection. Restore canonical minimum; tradeoff is ordering/ID comparison work.
+- `bug/resume` / `44f21ff`: resumed kept bytes differ from clean; 1 failed in 0.90s. Loader discarded completed exact edges. Restore validated checkpoint loading; tradeoff is decoding/validation cost.
+
+Reproductions, progressive hints, diagnoses and verification fixtures are separate. Verified at historical fix commits: `f4542c0` partition check passed in 0.36s; `c884149` concurrency check passed in 0.31s. After the resume fix, all three checks passed in 1.07s. Full corrected branch `4c8c0c7`: 36 checks passed with 4 upstream warnings in 132.64s; dependency, compilation, diff and source-equality checks passed. No unresolved branch issue remains; non-fast-forward merge `5ebb70e` preserved the bug/fix topology without changing main's existing application behavior. Implementation session introduced, reproduced and inspected these learning-branch issues; no personal investigation by Shaoyu is claimed. Personal stories require your later notes. The newer integration request supersedes permanent branch isolation; bug snapshots remain available, and main will receive only the checked, corrected final tree.
 
 ## H00 — Deterministic global groups with heterogeneous metadata
 - **Context:** Mapping the document contract to Ray Data batches and global dedup groups.
